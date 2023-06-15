@@ -15,6 +15,20 @@ class _GetNewsState extends State<GetNews> {
   final TextEditingController _searchController = TextEditingController();
   String _searchText = '';
 
+  List<String> newsID = [];
+
+  getNewsID() async{
+    await FirebaseFirestore.instance.collection('news').get().then(
+          (snapshot) => snapshot.docs.forEach((news) {
+        if (news.exists) {
+          newsID.add(news.reference.id);
+        } else {
+          print("Ntg to see here");
+        }
+      }),
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -62,7 +76,7 @@ class _GetNewsState extends State<GetNews> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Discover',
+              'News',
               style: Theme.of(context)
                   .textTheme
                   .headline4!
@@ -102,11 +116,10 @@ class _GetNewsState extends State<GetNews> {
                         child: Text('Some error occurred ${snapshot.error}'));
                   }
 
-                  if (snapshot.hasData) {
+                  else if (snapshot.hasData) {
                     QuerySnapshot querySnapshot = snapshot.data!;
                     List<QueryDocumentSnapshot> documents = querySnapshot.docs;
-                    List<Map> items =
-                    documents.map((e) => e.data() as Map).toList();
+                    List<Map> items = documents.map((e) => e.data() as Map).toList();
                     List<Map> filteredItems = items
                         .where((item) => item['title']
                         .toString()
@@ -117,8 +130,8 @@ class _GetNewsState extends State<GetNews> {
                     return ListView.builder(
                       itemCount: filteredItems.length,
                       itemBuilder: (BuildContext context, int index) {
-                        Map thisItem = filteredItems[index];
-                        return buildCardWidget(thisItem);
+                        String documentId = documents[index].id;
+                        return buildCardWidget(filteredItems[index], documentId);
                       },
                     );
                   }
@@ -133,72 +146,54 @@ class _GetNewsState extends State<GetNews> {
     );
   }
 
-  Widget buildCardWidget(Map item) {
-    return Card(
-      elevation: 2,
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 10.0,
-          horizontal: 16.0,
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              flex: 1,
-              child: item.containsKey('image')
-                  ? Image.network(
-                '${item['image']}',
-                fit: BoxFit.cover,
-              )
-                  : Container(),
-            ),
-            const SizedBox(width: 16.0),
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${item['title']}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                  const SizedBox(height: 10.0),
-                  // subtitle: Text('${item['summary']}'),
-                ],
+  Widget buildCardWidget(Map item, String dID) {
+    return InkWell(
+      onTap: () async {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => NewsDetails(newsId: dID,),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 2,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 10.0,
+            horizontal: 16.0,
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: item.containsKey('image')
+                    ? Image.network(
+                  '${item['image']}',
+                  fit: BoxFit.cover,
+                )
+                    : Container(),
               ),
-            ),
-          ],
-        ),
-        onTap: () async {
-
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => NewsDetails(item['Id'], documentId: '',),
-            ),
-          );
-          final snapshot = await FirebaseFirestore.instance
-              .collection('news')
-              .where('Id', isEqualTo: item['Id'])
-              .get();
-
-          if (snapshot.size > 0) {
-            final document = snapshot.docs.first;
-            final documentId = document?.id; // Add a null-aware operator '?'
-            if (documentId != null) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => NewsDetails(documentId, documentId: '',),
+              const SizedBox(width: 16.0),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${dID}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 10.0),
+                    // subtitle: Text('${item['summary']}'),
+                  ],
                 ),
-              );
-            } else {
-              print('Document ID is null');
-            }
-          }
-        },
-
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

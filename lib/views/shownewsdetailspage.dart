@@ -1,17 +1,16 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import 'package:newsapplication/widgets/custom_tag.dart';
 
 class NewsDetails extends StatelessWidget {
-  NewsDetails(this.newsId, {Key? key, required String documentId}) : super(key: key);
 
   final String newsId;
+
+  NewsDetails({Key? key, required this.newsId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
